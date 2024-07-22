@@ -36,22 +36,6 @@ class MyFrame(wx.Frame):
         self.Bind(wx.media.EVT_MEDIA_LOADED,self.button_play,self.player)
         
         #Boutons
-        self.PIP_install_verif = wx.Button(self.panel,-1,"Verify if PIP is UpToDate")
-        self.Bind(wx.EVT_BUTTON, self.PIPinstall_verif, self.PIP_install_verif)
-
-        self.MOD_uninstall = wx.Button(self.panel,-1,"Uninstall ?")
-        self.Bind(wx.EVT_BUTTON, self.MODuninstall, self.MOD_uninstall)
-        self.MOD_uninstall.Disable()
-        self.MOD_uninstall.SetForegroundColour("RED")
-        self.MOD_uninstall.SetFont(wx.Font(12, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
-        self.MOD_uninstall.SetToolTip(wx.ToolTip('Click to uninstall library'))
-
-        #Auto update (all libs !)
-        self.up_all = wx.Button(self.panel,-1,"Update ALL libraries ?")
-        self.Bind(wx.EVT_BUTTON, self.upall, self.up_all)
-        self.up_all.SetForegroundColour("ORANGE")
-        self.up_all.SetFont(wx.Font(12, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
-        self.up_all.SetToolTip(wx.ToolTip('Click update all libraries (using pip-review)'))
 
         #Help 
         self.help = wx.Button(self.panel,-1,"Need help ?")
@@ -59,13 +43,6 @@ class MyFrame(wx.Frame):
         self.help.SetForegroundColour("forest Green")
         self.help.SetFont(wx.Font(12, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
         self.help.SetToolTip(wx.ToolTip('Click if you need help'))
-
-        #Show installed Libs
-        self.show_all = wx.Button(self.panel,-1,"Show Installed Libs")
-        self.Bind(wx.EVT_BUTTON, self.show_installed_libs, self.show_all)
-        self.show_all.SetForegroundColour("BLUE")
-        self.show_all.SetFont(wx.Font(12, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
-        self.show_all.SetToolTip(wx.ToolTip('Click to see all installed libraries'))
 
         #Boutons musique
         self.buttonZik = wx.Button(self.panel,-1,"Play/Pause")
@@ -78,51 +55,60 @@ class MyFrame(wx.Frame):
         self.txtVideMemo = wx.StaticText(self.panel,-1,"")
         self.txtVideMemo.SetFont(wx.Font(18, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
         
-        self.txtVidePIP = wx.StaticText(self.panel,-1,"")
-        self.txtVidePIP.SetFont(wx.Font(10, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
-        
         #widgets
-        self.txtMod = wx.StaticText(self.panel,-1,"Library to install :")
-        
-        self.txtBox = wx.TextCtrl(self.panel,-1,size=(300,20),style=wx.TE_PROCESS_ENTER)
-        self.txtBox.SetHint("Type library name here...")
+        #Music
+        self.txtMus = wx.StaticText(self.panel,-1,"Music to search :")
+        self.txtMus.SetFont(wx.Font(11, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
+
+        #Album
+        self.txt_alb = wx.StaticText(self.panel,-1,"Album to search :")
+        self.txt_alb.SetFont(wx.Font(11, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
+
+        #Music field
+        self.txtBox = wx.TextCtrl(self.panel,-1,size=(300,25),style=wx.TE_PROCESS_ENTER)
+        self.txtBox.SetFont(wx.Font(11, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
+        self.txtBox.SetHint("Type music name here...")
         self.Bind(wx.EVT_TEXT_ENTER,self.Get_Mod,self.txtBox)
+
+        #Album field
+        self.txtBox_alb = wx.TextCtrl(self.panel,-1,size=(300,25),style=wx.TE_PROCESS_ENTER)
+        self.txtBox_alb.SetFont(wx.Font(11, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
+        self.txtBox_alb.SetHint("Type album name here...")
+        self.Bind(wx.EVT_TEXT_ENTER,self.Get_Mod,self.txtBox_alb)
         
+        #Output
         self.AffichTxt=wx.TextCtrl(self.panel,-1,size=(450,300),style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_AUTO_URL|wx.TE_RICH)
         self.AffichTxt.SetBackgroundColour('BLACK')
         self.AffichTxt.SetFont(wx.Font(10, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
         self.AffichTxt.SetForegroundColour("FOREST GREEN")
         self.AffichTxt.Bind(wx.EVT_TEXT_URL, self.on_focus,self.AffichTxt)
 
-        self.txtMajPip = wx.StaticText(self.panel,-1,"Link to Dev's Paypal.me :")
+        self.txt_don = wx.StaticText(self.panel,-1,"Link to Dev's Paypal.me :")
 
-        self.LienPip = hl.HyperLinkCtrl(self.panel, wx.ID_ANY, 'Thanks if you donate <3',URL="paypal.me/noobpythondev")
-        self.LienPip.SetLinkCursor(wx.CURSOR_HAND)
-        self.LienPip.SetUnderlines(False, False, True)
-        self.LienPip.EnableRollover(True)
-        self.LienPip.SetColours("BLUE", "ORANGE", "BLUE")
-        self.LienPip.SetBold(True)
-        self.LienPip.SetToolTip(wx.ToolTip('Donation link to the no0b Dev ;)'))
-        self.LienPip.UpdateLink()
+        self.Lien_don = hl.HyperLinkCtrl(self.panel, wx.ID_ANY, 'Thanks if you donate <3',URL="paypal.me/noobpythondev")
+        self.Lien_don.SetLinkCursor(wx.CURSOR_HAND)
+        self.Lien_don.SetUnderlines(False, False, True)
+        self.Lien_don.EnableRollover(True)
+        self.Lien_don.SetColours("BLUE", "ORANGE", "BLUE")
+        self.Lien_don.SetBold(True)
+        self.Lien_don.SetToolTip(wx.ToolTip('Donation link to the no0b Dev ;)'))
+        self.Lien_don.UpdateLink()
         
         #Sizer install
         gbox0 = wx.GridBagSizer(10,10)
         gbox0.SetEmptyCellSize((10,10))
-        gbox0.Add(self.PIP_install_verif,(0,0))
-        gbox0.Add(self.txtVidePIP,(0,1))
-        gbox0.Add(self.txtMajPip,(1,0))
-        gbox0.Add(self.LienPip,(1,1))
+        gbox0.Add(self.txt_don,(0,0))
+        gbox0.Add(self.Lien_don,(0,1))
         
         #Sizer gestion
         gbox1 = wx.GridBagSizer(10,10)
         gbox1.SetEmptyCellSize((2,2))
-        gbox1.Add(self.txtMod,(0,0))
+        gbox1.Add(self.txtMus,(0,0))
         gbox1.Add(self.txtBox,(0,1))
-        gbox1.Add(self.txtVideMemo,(1,1))
-        gbox1.Add(self.MOD_uninstall,(2,0))
+        gbox1.Add(self.txtVideMemo,(2,1))
+        gbox1.Add(self.txt_alb,(1,0))
+        gbox1.Add(self.txtBox_alb,(1,1))
         gbox1.Add(self.help,(3,0))
-        gbox1.Add(self.up_all,(3,1))
-        gbox1.Add(self.show_all,(2,1))
 
         #Sizer affichage
         gbox2 = wx.GridBagSizer(10,10)
@@ -136,14 +122,14 @@ class MyFrame(wx.Frame):
         gbox3.Add(self.buttonZikStop,(0,1))
         
         #PIP
-        box0 = wx.StaticBox(self.panel, -1, "PIP Settings :")
+        box0 = wx.StaticBox(self.panel, -1, "Donation :")
         bsizer0 = wx.StaticBoxSizer(box0, wx.HORIZONTAL)
         sizerH0 = wx.BoxSizer(wx.VERTICAL)
         sizerH0.Add(gbox0, 0, wx.ALL|wx.CENTER, 10)
         bsizer0.Add(sizerH0, 1, wx.EXPAND, 0)
         
         #Modules
-        box1 = wx.StaticBox(self.panel, -1, "Librairies Tool :")
+        box1 = wx.StaticBox(self.panel, -1, "Youtube-Zik Downloader :")
         bsizer1 = wx.StaticBoxSizer(box1, wx.HORIZONTAL)
         sizerH1 = wx.BoxSizer(wx.VERTICAL)
         sizerH1.Add(gbox1, 0, wx.ALL|wx.CENTER, 10)
@@ -165,10 +151,10 @@ class MyFrame(wx.Frame):
 
         #--------Ajustement du sizer----------
         mainSizer = wx.BoxSizer(wx.VERTICAL)
-        mainSizer.Add(bsizer0, 0,wx.ALL|wx.EXPAND, 10)
         mainSizer.Add(bsizer1, 0,wx.ALL|wx.EXPAND, 10)
         mainSizer.Add(bsizer2, 0,wx.ALL|wx.EXPAND, 10)
         mainSizer.Add(bsizer3, 0,wx.ALL|wx.EXPAND, 10)
+        mainSizer.Add(bsizer0, 0,wx.ALL|wx.EXPAND, 10)
         self.panel.SetSizerAndFit(mainSizer)
 
         #couleur bouton zik
