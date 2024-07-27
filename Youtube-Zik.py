@@ -3,13 +3,13 @@ import wx
 import time
 from time import gmtime, strftime
 import os, sys
+from os import listdir
 from os.path import *
-import subprocess
-import shlex
 import wx.lib.agw.hyperlink as hl
-import wx.media
 import threading
-import pip_api
+from pytubefix import YouTube, Search
+from pytubefix.cli import on_progress
+from collections import deque
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, id, title):
@@ -29,12 +29,6 @@ class MyFrame(wx.Frame):
         self.loader = Loader(self,-1,"Loading...")
         self.loader.Centre()
         
-        #Musique Player
-        self.player = wx.media.MediaCtrl(self, szBackend=wx.media.MEDIABACKEND_WMP10)
-        zik_path= os.path.dirname(__file__)+"\\music\\zik.mp3"
-        self.player.Load(zik_path)
-        self.Bind(wx.media.EVT_MEDIA_LOADED,self.button_play,self.player)
-        
         #Boutons
 
         #Help 
@@ -44,45 +38,29 @@ class MyFrame(wx.Frame):
         self.help.SetFont(wx.Font(12, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
         self.help.SetToolTip(wx.ToolTip('Click if you need help'))
 
-        #Boutons musique
-        self.buttonZik = wx.Button(self.panel,-1,"Play/Pause")
-        self.Bind(wx.EVT_BUTTON, self.button_play, self.buttonZik)
-
-        self.buttonZikStop = wx.Button(self.panel,-1,"Stop")
-        self.Bind(wx.EVT_BUTTON, self.button_stop, self.buttonZikStop)
-
         #widgets vides
         self.txtVideMemo = wx.StaticText(self.panel,-1,"")
         self.txtVideMemo.SetFont(wx.Font(18, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
+        self.txtVideMemo.SetForegroundColour(wx.RED)
         
         #widgets
         #Music
-        self.txtMus = wx.StaticText(self.panel,-1,"Music to search :")
+        self.txtMus = wx.StaticText(self.panel,-1,"Search on YouTube :")
         self.txtMus.SetFont(wx.Font(11, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
-
-        #Album
-        self.txt_alb = wx.StaticText(self.panel,-1,"Album to search :")
-        self.txt_alb.SetFont(wx.Font(11, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
 
         #Music field
         self.txtBox = wx.TextCtrl(self.panel,-1,size=(300,25),style=wx.TE_PROCESS_ENTER)
         self.txtBox.SetFont(wx.Font(11, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
-        self.txtBox.SetHint("Type music name here...")
-        self.Bind(wx.EVT_TEXT_ENTER,self.Get_Mod,self.txtBox)
-
-        #Album field
-        self.txtBox_alb = wx.TextCtrl(self.panel,-1,size=(300,25),style=wx.TE_PROCESS_ENTER)
-        self.txtBox_alb.SetFont(wx.Font(11, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
-        self.txtBox_alb.SetHint("Type album name here...")
-        self.Bind(wx.EVT_TEXT_ENTER,self.Get_Mod,self.txtBox_alb)
+        self.txtBox.SetHint("Type music/album/artist name here...")
+        self.Bind(wx.EVT_TEXT_ENTER,self.get_music,self.txtBox)
         
         #Output
-        self.AffichTxt=wx.TextCtrl(self.panel,-1,size=(450,300),style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_AUTO_URL|wx.TE_RICH)
-        self.AffichTxt.SetBackgroundColour('BLACK')
-        self.AffichTxt.SetFont(wx.Font(10, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
-        self.AffichTxt.SetForegroundColour("FOREST GREEN")
-        self.AffichTxt.Bind(wx.EVT_TEXT_URL, self.on_focus,self.AffichTxt)
-
+        self.AffichTxt = wx.ListCtrl(self.panel,style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.BORDER_SUNKEN,size=(440,440))
+        self.AffichTxt.InsertColumn(0, "MUSIC TITLES",width=440)
+        self.Bind(wx.EVT_LIST_COL_BEGIN_DRAG, self.no_resize, self.AffichTxt)
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK,self.download, self.AffichTxt)
+        
+        #Donate
         self.txt_don = wx.StaticText(self.panel,-1,"Link to Dev's Paypal.me :")
 
         self.Lien_don = hl.HyperLinkCtrl(self.panel, wx.ID_ANY, 'Thanks if you donate <3',URL="paypal.me/noobpythondev")
@@ -105,30 +83,22 @@ class MyFrame(wx.Frame):
         gbox1.SetEmptyCellSize((2,2))
         gbox1.Add(self.txtMus,(0,0))
         gbox1.Add(self.txtBox,(0,1))
-        gbox1.Add(self.txtVideMemo,(2,1))
-        gbox1.Add(self.txt_alb,(1,0))
-        gbox1.Add(self.txtBox_alb,(1,1))
-        gbox1.Add(self.help,(3,0))
+        gbox1.Add(self.txtVideMemo,(1,1))
+        gbox1.Add(self.help,(2,0))
 
         #Sizer affichage
         gbox2 = wx.GridBagSizer(10,10)
         gbox2.SetEmptyCellSize((10,10))
         gbox2.Add(self.AffichTxt,(0,0))
-
-        #Sizer zik
-        gbox3 = wx.GridBagSizer(10,10)
-        gbox3.SetEmptyCellSize((10,10))
-        gbox3.Add(self.buttonZik,(0,0))
-        gbox3.Add(self.buttonZikStop,(0,1))
         
-        #PIP
+        #DONATE
         box0 = wx.StaticBox(self.panel, -1, "Donation :")
         bsizer0 = wx.StaticBoxSizer(box0, wx.HORIZONTAL)
         sizerH0 = wx.BoxSizer(wx.VERTICAL)
         sizerH0.Add(gbox0, 0, wx.ALL|wx.CENTER, 10)
         bsizer0.Add(sizerH0, 1, wx.EXPAND, 0)
         
-        #Modules
+        #Zik-DDL
         box1 = wx.StaticBox(self.panel, -1, "Youtube-Zik Downloader :")
         bsizer1 = wx.StaticBoxSizer(box1, wx.HORIZONTAL)
         sizerH1 = wx.BoxSizer(wx.VERTICAL)
@@ -136,29 +106,22 @@ class MyFrame(wx.Frame):
         bsizer1.Add(sizerH1, 1, wx.EXPAND, 0)
 
         #Affichage
-        box2 = wx.StaticBox(self.panel, -1, "Output :")
+        box2 = wx.StaticBox(self.panel, -1, "Results of YT music search :")
         bsizer2 = wx.StaticBoxSizer(box2, wx.HORIZONTAL)
         sizerH2 = wx.BoxSizer(wx.VERTICAL)
         sizerH2.Add(gbox2, 0, wx.ALL|wx.CENTER, 10)
         bsizer2.Add(sizerH2, 1, wx.EXPAND, 0)
 
-        #Zik
-        box3 = wx.StaticBox(self.panel, -1, "Music :")
-        bsizer3 = wx.StaticBoxSizer(box3, wx.HORIZONTAL)
-        sizerH3 = wx.BoxSizer(wx.VERTICAL)
-        sizerH3.Add(gbox3, 0, wx.ALL|wx.CENTER, 10)
-        bsizer3.Add(sizerH3, 1, wx.EXPAND, 0)
-
         #--------Ajustement du sizer----------
         mainSizer = wx.BoxSizer(wx.VERTICAL)
         mainSizer.Add(bsizer1, 0,wx.ALL|wx.EXPAND, 10)
         mainSizer.Add(bsizer2, 0,wx.ALL|wx.EXPAND, 10)
-        mainSizer.Add(bsizer3, 0,wx.ALL|wx.EXPAND, 10)
         mainSizer.Add(bsizer0, 0,wx.ALL|wx.EXPAND, 10)
         self.panel.SetSizerAndFit(mainSizer)
 
-        #couleur bouton zik
-        self.buttonZik.SetBackgroundColour(wx.GREEN)
+        #Create dir for DL if not exixts
+        if not os.path.exists('Collection'):
+            os.makedirs('Collection')
 
     #Threads wrapper usage : mark @threaded over differents threads
     def threaded(fn):
@@ -166,87 +129,66 @@ class MyFrame(wx.Frame):
             threading.Thread(target=fn, args=args, kwargs=kwargs).start()
         return wrapper
 
-    def show_help(self,evt):
-        Connexion = wx.MessageDialog(self, "Show Installed Libs Notice :"+"\n\n"+"Left Double Click on link : Uninstall a single library"+"\n\n"+"Right Click on a link : Update a single Library"+"\n\n"+"That's all folks !","Help window",\
-        style=wx.ICON_QUESTION|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
-        rep = Connexion.ShowModal() #Affiche le message a l'ecran.
-        evt.Skip()
-
-    def on_focus(self,evt):
-        urlStart = evt.GetURLStart()
-        urlEnd = evt.GetURLEnd()
-        lib = self.AffichTxt.GetRange(urlStart+7, urlEnd)
-        if evt.MouseEvent.LeftDClick():
-            Connexion = wx.MessageDialog(self, "Do you want to uninstall "+lib+" ?","Uninstall a library",\
-            style=wx.ICON_QUESTION|wx.CENTRE|wx.YES_NO,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
-            rep = Connexion.ShowModal() #Affiche le message a l'ecran.
-            if (rep==wx.ID_YES):
-                self.txtBox.SetValue(lib)
-                self.MODuninstall(evt)
-        if evt.MouseEvent.RightDown():
-            Connexion = wx.MessageDialog(self, "Do you want to update "+lib+" ?","Update a library",\
-            style=wx.ICON_QUESTION|wx.CENTRE|wx.YES_NO,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
-            rep = Connexion.ShowModal() #Affiche le message a l'ecran.
-            if (rep==wx.ID_YES):
-                self.txtBox.SetValue(lib)
-                self.Up_Mod()
-        evt.Skip()
+    #Prevents user from resizing columns width
+    def no_resize(self,evt):
+        evt.Veto()
 
     @threaded
-    def upall(self,evt):
-        global process
-        self.show_loader()
-        process = subprocess.Popen(shlex.split('pip-review --auto'),encoding ="cp1252", text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True)
-        self.get_data()
-        if (is_ok==1):
-            self.upall_out()
+    def get_music(self,evt):
+        global liste_urls,lst_ziks,title
+        liste_ziks=[f for f in listdir("Collection") if isfile(join("Collection", f))]
+        lst_ziks = [os.path.splitext(x)[0] for x in liste_ziks]
+        liste_urls=deque()
+        if (self.AffichTxt.IsEmpty()==False):
+            self.AffichTxt.DeleteAllItems()
+        zik = self.txtBox.GetValue()
+        if (zik!=""):
+            self.show_loader()
+            self.txtVideMemo.SetLabel("")
+            s = Search(zik)
+            liste_zik = s.videos
+            for i in liste_zik:
+                title = i.title
+                url = i.watch_url
+                liste_urls.appendleft(url)
+                self.AffichTxt.InsertItem(0,title)
+                self.color_ziks()
+                self.check_zik()
+                
         else:
-            self.upall_err()
-        evt.Skip()
+            self.txtVideMemo.SetLabel("Enter music name !")
+        evt.Skip()        
 
-    def upall_out(self):
-        self.hide_loader()
-        self.txtVideMemo.SetLabel("ALL Libraries updates done !")
-        self.up_all.Disable()
-
-    def upall_err(self):
-        self.hide_loader()
-        self.txtVideMemo.SetLabel("Update not done !")
-
-    def show_installed_libs(self,evt):
-        self.AffichTxt.Clear()
-        self.AffichTxt.SetForegroundColour("FOREST GREEN")
-        self.AffichTxt.AppendText("--------------------------" + "\n")
-        self.AffichTxt.AppendText("Installed Librairies" + "\n")
-        self.AffichTxt.AppendText("--------------------------" + "\n")
-        i = pip_api.installed_distributions()
-        for k, v in i.items():
-            lib = "http://"+k
-            self.AffichTxt.AppendText(lib +" => "+k+"-"+str(v.version)+"\n")
-            self.reset_scroll_pos()
-        evt.Skip()
-
-    def reset_scroll_pos(self):
-        self.AffichTxt.SetScrollPos(wx.VERTICAL,self.AffichTxt.GetScrollRange(wx.VERTICAL))
-        self.AffichTxt.SetInsertionPoint(0)
+    def check_zik(self):
+        for j in lst_ziks:
+            if (j==title):
+                index=self.AffichTxt.FindItem(-1,j)
+                self.AffichTxt.SetItemTextColour(index,wx.RED)
         
-    @threaded 
-    def button_play(self,evt):
-        colorpause=self.buttonZik.GetBackgroundColour()
-        if colorpause==(wx.GREEN):
-            self.player.Pause()
-            self.buttonZik.SetBackgroundColour("")
-        else:#sinon on play
-            self.player.Play()
-            self.buttonZikStop.SetBackgroundColour("")
-            self.buttonZik.SetBackgroundColour(wx.GREEN)
+    def download(self,evt):
+        i_text = evt.GetText()
+        index=self.AffichTxt.FindItem(-1,i_text)
+        test_color = self.AffichTxt.GetItemTextColour(index)
+        if test_color==wx.RED:
+            Connexion = wx.MessageDialog(self, "You already onw this music !"+"\n"+"You cannot download it twice !","Warning window",\
+            style=wx.ICON_QUESTION|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+            rep = Connexion.ShowModal() #Affiche le message a l'ecran.
+        else:
+            url=liste_urls[index]
+            yt = YouTube(url)
+            stream = yt.streams.get_audio_only()
+            stream.download("Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
+            self.AffichTxt.SetItemTextColour(index,wx.RED)
         evt.Skip()
         
-    @threaded
-    def button_stop(self,evt):
-        self.buttonZikStop.SetBackgroundColour(wx.RED)
-        self.buttonZik.SetBackgroundColour("")
-        self.player.Stop()
+    def color_ziks(self):
+        self.AffichTxt.SetTextColour(wx.BLUE)
+        self.hide_loader()
+        
+    def show_help(self,evt):
+        Connexion = wx.MessageDialog(self, "YouTube Downloader Python V1.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title turns RED !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection' folder !"+"\n\n"+"That's all folks !","Help window",\
+        style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+        rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         evt.Skip()
         
     @threaded
@@ -256,136 +198,6 @@ class MyFrame(wx.Frame):
     @threaded
     def hide_loader(self):
         self.loader.Hide()
-
-    @threaded
-    def PIPinstall_verif(self,evt):
-        global process
-        self.show_loader()
-        process = subprocess.Popen(shlex.split('python -m pip install --upgrade pip'),encoding ="cp1252", text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True)
-        self.get_data()
-        if (is_ok==1):
-            self.PIP_verif_out()
-        else:
-            self.PIP_verif_err()
-        evt.Skip()
-
-    def get_data(self):
-        global outs,errs,is_ok
-        outs,errs = process.communicate()
-        if (outs and not errs):
-            self.txtVideMemo.SetLabel("")
-            self.AffichTxt.Clear()
-            self.txtVidePIP.SetLabel("")
-            self.AffichTxt.SetForegroundColour("FOREST GREEN")
-            self.txtVideMemo.SetForegroundColour("FOREST GREEN")
-            self.txtVidePIP.SetForegroundColour("FOREST GREEN")
-            self.AffichTxt.AppendText(outs + "\n")
-            self.reset_scroll_pos()
-            is_ok = 1
-        if errs:
-            self.txtVideMemo.SetLabel("")
-            self.AffichTxt.Clear()
-            self.txtVidePIP.SetLabel("")
-            self.AffichTxt.SetForegroundColour("RED")
-            self.txtVideMemo.SetForegroundColour("RED")
-            self.txtVidePIP.SetForegroundColour("RED")
-            self.AffichTxt.AppendText(errs + "\n")
-            self.reset_scroll_pos()
-            is_ok = 0
-
-    #Kinda deprecated as it's not supposed to be possible...
-    def PIP_verif_err(self):
-        self.hide_loader()
-        self.txtVidePIP.SetLabel('PIP not installed !')
-        self.PIP_install.Enable()
-        self.PIP_install_verif.Disable()
-        
-    def PIP_verif_out(self):
-        self.hide_loader()
-        self.txtVidePIP.SetLabel('PIP is Up To Date !')
-        self.PIP_install_verif.Disable()
-
-    @threaded
-    def Up_Mod(self):
-        global process,exception
-        mod_to_up=self.txtBox.GetValue()
-        self.show_loader()
-        process = subprocess.Popen(shlex.split('python -m pip install --upgrade '+mod_to_up),encoding ="cp1252", text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True)
-        self.get_data()
-        if (is_ok == 1):
-            txt_except="Requirement already satisfied: "+mod_to_up
-            if txt_except in outs:
-                exception=1    
-            self.Up_Mod_out()
-        else:
-            self.Up_Mod_err()
-
-    def Up_Mod_out(self):
-        self.hide_loader()
-        if exception==1:
-            self.txtVideMemo.SetLabel("Library already Up to date !")
-            self.MOD_uninstall.Enable()
-        else:
-            self.txtVideMemo.SetLabel("Library Updated !")
-            self.MOD_uninstall.Enable()
-
-    def Up_Mod_err(self):
-        self.hide_loader()
-        self.txtVideMemo.SetLabel("Something went wrong ! >_<")
-        
-    @threaded     
-    def Get_Mod(self,evt):
-        global exception,process
-        exception=0
-        mod_to_install=self.txtBox.GetValue()
-        self.show_loader()
-        process = subprocess.Popen(shlex.split('python -m pip install '+mod_to_install),encoding ="cp1252", text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,shell=True)
-        self.get_data()
-        if (is_ok == 1):
-            txt_except="Requirement already satisfied: "+mod_to_install
-            if txt_except in outs:
-                exception=1    
-            self.MOD_out()
-        else:
-            self.MOD_err()
-        evt.Skip()
-        
-    def MOD_out(self):
-        self.hide_loader()
-        if exception==1:
-            self.txtVideMemo.SetLabel("Library already installed !")
-            self.MOD_uninstall.Enable()
-        else:
-            self.txtVideMemo.SetLabel("Library installation done !")
-            self.MOD_uninstall.Enable()
-
-    def MOD_err(self):
-        self.hide_loader()
-        self.txtVideMemo.SetLabel("Something went wrong ! >_<")
-        
-
-    @threaded
-    def MODuninstall(self,evt):
-        global process
-        mod_to_uninstall=self.txtBox.GetValue()
-        self.show_loader()
-        process = subprocess.Popen(shlex.split('python -m pip uninstall -y '+mod_to_uninstall),encoding ="cp1252", text=True, stdout=subprocess.PIPE,shell=True)
-        self.get_data()
-        if (is_ok==1):
-            self.MOD_uninstall_out()
-        else:
-            self.MOD_uninstall_err()
-        evt.Skip()
-
-    def MOD_uninstall_out(self):
-        self.hide_loader()
-        self.txtVideMemo.SetLabel("Library successfully uninstalled !")
-        self.MOD_uninstall.Disable()
-
-    def MOD_uninstall_err(self):
-        self.hide_loader()
-        self.txtVideMemo.SetLabel("Something went wrong !>_<")
-        self.MOD_uninstall.Disable()
     
     def Chrono(self):#Chronometre (date )
         stemps = time.strftime("%A %d/%m/%Y") #Definit le format voulu
@@ -399,11 +211,10 @@ class MyFrame(wx.Frame):
 
     def on_close(self,evt):#On detruit tout :)
         try:
-            self.player.Stop()
+            self.loader.Destroy()
         except:
             pass
         finally:
-            self.loader.Destroy()
             self.Destroy()
 
 class Loader(wx.Frame):
@@ -415,7 +226,7 @@ class Loader(wx.Frame):
         self.panel.Fit()
         self.panel.Show()
 
-        self.txt = wx.StaticText(self.panel,-1,"Searching Music Please Wait...")
+        self.txt = wx.StaticText(self.panel,-1,"Searching Music/Album/Artist Please Wait...")
         self.spinner = wx.ActivityIndicator(self.panel, size=(35, 35))
 
         sizer.AddStretchSpacer(1)
@@ -430,7 +241,7 @@ class Loader(wx.Frame):
         
 class MyApp(wx.App):
     def OnInit(self):
-        frame = MyFrame(None, -1, "YoutubeZik DDL V0.1")
+        frame = MyFrame(None, -1, "YoutubeZik DDL V1.0")
         frame.Show(True)
         frame.Centre()
         return True
@@ -441,4 +252,4 @@ if __name__=='__main__':
     app.MainLoop()
 
 
-### PIP_GUI_V1.1.6 by François GARBEZ 10/11/2023 Tested on python 3.12 Win10 ###
+### YoutubeZik DDL V1.0 by François GARBEZ 27/07/2024 Tested on python 3.12 Win11 ###
