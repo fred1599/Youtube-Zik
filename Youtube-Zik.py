@@ -243,6 +243,17 @@ class MyFrame(wx.Frame):
                     self.AffichTxt.SetItemTextColour(index,wx.RED)
             else:
                 pass
+        else:
+            url=liste_urls[index]
+            yt = YouTube(url)
+            if (self.test_mp3==True):
+                stream = yt.streams.get_audio_only()
+                stream.download("Audio Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
+                self.AffichTxt.SetItemTextColour(index,wx.RED)
+            else:
+                stream = yt.streams.get_highest_resolution()
+                stream.download("Video Collection")
+                self.AffichTxt.SetItemTextColour(index,wx.RED)
         evt.Skip()
         
     def show_help(self,evt):
