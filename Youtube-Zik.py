@@ -170,7 +170,7 @@ class MyFrame(wx.Frame):
         index=self.AffichTxt.FindItem(-1,i_text)
         test_color = self.AffichTxt.GetItemTextColour(index)
         if test_color==wx.RED:
-            Connexion = wx.MessageDialog(self, "You already onw this music !"+"\n"+"You cannot download it twice !","Warning window",\
+            Connexion = wx.MessageDialog(self, "You already own this music !"+"\n"+"You cannot download it twice !","Warning window",\
             style=wx.ICON_QUESTION|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
             rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         else:
