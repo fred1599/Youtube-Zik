@@ -236,16 +236,17 @@ class MyFrame(wx.Frame):
                 if (self.test_mp3==True):
                     stream = yt.streams.get_audio_only()
                     stream.download("Audio Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
+                    self.AffichTxt.SetItemTextColour(index,wx.RED)
                 else:
                     stream = yt.streams.get_highest_resolution()
                     stream.download("Video Collection")
-                self.AffichTxt.SetItemTextColour(index,wx.RED)
+                    self.AffichTxt.SetItemTextColour(index,wx.RED)
             else:
                 pass
         evt.Skip()
         
     def show_help(self,evt):
-        Connexion = wx.MessageDialog(self, "YouTube Downloader Python V1.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title turns RED !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection' folder !"+"\n\n"+"That's all folks !","Help window",\
+        Connexion = wx.MessageDialog(self, "YouTube Downloader Python V2.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title turns RED !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection''s folder !"+"\n\n"+"That's all folks !","Help window",\
         style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
         rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         evt.Skip()
