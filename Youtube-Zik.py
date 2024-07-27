@@ -28,15 +28,27 @@ class MyFrame(wx.Frame):
         #Loader
         self.loader = Loader(self,-1,"Loading...")
         self.loader.Centre()
+
+        #RadioButtons
+        self.mp3_b = wx.RadioButton(self.panel,-1, label="Format: mp3 (audio only)", style=wx.RB_GROUP)
+        self.Bind(wx.EVT_RADIOBUTTON,self.def_mp3,self.mp3_b)
+        self.mp4_b = wx.RadioButton(self.panel,-1, label="Format: mp4 (video)")
+        self.Bind(wx.EVT_RADIOBUTTON,self.def_mp4,self.mp4_b)
         
         #Boutons
-
         #Help 
         self.help = wx.Button(self.panel,-1,"Need help ?")
         self.Bind(wx.EVT_BUTTON, self.show_help, self.help)
         self.help.SetForegroundColour("forest Green")
         self.help.SetFont(wx.Font(12, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
         self.help.SetToolTip(wx.ToolTip('Click if you need help'))
+
+        #More Results
+        self.more = wx.Button(self.panel,-1,"Need more ?")
+        self.Bind(wx.EVT_BUTTON, self.show_more, self.more)
+        self.more.SetForegroundColour("Blue")
+        self.more.SetFont(wx.Font(12, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False, "Impact" ))
+        self.more.SetToolTip(wx.ToolTip('Click to fetch more results'))
 
         #widgets vides
         self.txtVideMemo = wx.StaticText(self.panel,-1,"")
@@ -55,7 +67,7 @@ class MyFrame(wx.Frame):
         self.Bind(wx.EVT_TEXT_ENTER,self.get_music,self.txtBox)
         
         #Output
-        self.AffichTxt = wx.ListCtrl(self.panel,style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.BORDER_SUNKEN,size=(440,440))
+        self.AffichTxt = wx.ListCtrl(self.panel,style=wx.LC_REPORT|wx.LC_SINGLE_SEL|wx.BORDER_SUNKEN,size=(440,400))
         self.AffichTxt.InsertColumn(0, "MUSIC TITLES",width=440)
         self.Bind(wx.EVT_LIST_COL_BEGIN_DRAG, self.no_resize, self.AffichTxt)
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK,self.download, self.AffichTxt)
@@ -85,11 +97,14 @@ class MyFrame(wx.Frame):
         gbox1.Add(self.txtBox,(0,1))
         gbox1.Add(self.txtVideMemo,(1,1))
         gbox1.Add(self.help,(2,0))
+        gbox1.Add(self.more,(2,1))
 
         #Sizer affichage
         gbox2 = wx.GridBagSizer(10,10)
         gbox2.SetEmptyCellSize((10,10))
-        gbox2.Add(self.AffichTxt,(0,0))
+        gbox2.Add(self.mp3_b,(0,0))
+        gbox2.Add(self.mp4_b,(1,0))
+        gbox2.Add(self.AffichTxt,(2,0))
         
         #DONATE
         box0 = wx.StaticBox(self.panel, -1, "Donation :")
@@ -119,9 +134,16 @@ class MyFrame(wx.Frame):
         mainSizer.Add(bsizer0, 0,wx.ALL|wx.EXPAND, 10)
         self.panel.SetSizerAndFit(mainSizer)
 
-        #Create dir for DL if not exixts
-        if not os.path.exists('Collection'):
-            os.makedirs('Collection')
+        #Create dir for mp3 DL if not exixts
+        if not os.path.exists('Audio Collection'):
+            os.makedirs('Audio Collection')
+
+        #Create dir for mp4 DL if not exixts
+        if not os.path.exists('Video Collection'):
+            os.makedirs('Video Collection')
+
+        #Initialize self.test_mp3 var
+        self.test_mp3 = self.mp3_b.GetValue()
 
     #Threads wrapper usage : mark @threaded over differents threads
     def threaded(fn):
@@ -129,16 +151,37 @@ class MyFrame(wx.Frame):
             threading.Thread(target=fn, args=args, kwargs=kwargs).start()
         return wrapper
 
+    def def_mp3(self,evt):
+        self.test_mp3 = self.mp3_b.GetValue()
+        evt.Skip()
+
+    def def_mp4(self,evt):
+        self.mp3_b.SetValue(False)
+        self.test_mp3 = self.mp3_b.GetValue()
+        evt.Skip()
+
+    @threaded
+    def show_more(self,evt):
+        self.fetched=0
+        if (self.AffichTxt.IsEmpty()==False):
+            self.show_loader()
+            s.get_next_results()
+            self.fetch_q()
+        else:
+            self.txtVideMemo.SetLabel("Search for music first !")
+        evt.Skip()
+    
     #Prevents user from resizing columns width
     def no_resize(self,evt):
         evt.Veto()
 
     @threaded
     def get_music(self,evt):
-        global liste_urls,lst_ziks,title
-        liste_ziks=[f for f in listdir("Collection") if isfile(join("Collection", f))]
+        global s,lst_ziks,lst_vids
+        liste_ziks=[f for f in listdir("Audio Collection") if isfile(join("Audio Collection", f))]
+        liste_vids=[f for f in listdir("Video Collection") if isfile(join("Video Collection", f))]
         lst_ziks = [os.path.splitext(x)[0] for x in liste_ziks]
-        liste_urls=deque()
+        lst_vids = [os.path.splitext(x)[0] for x in liste_vids]
         if (self.AffichTxt.IsEmpty()==False):
             self.AffichTxt.DeleteAllItems()
         zik = self.txtBox.GetValue()
@@ -146,44 +189,60 @@ class MyFrame(wx.Frame):
             self.show_loader()
             self.txtVideMemo.SetLabel("")
             s = Search(zik)
-            liste_zik = s.videos
-            for i in liste_zik:
-                title = i.title
-                url = i.watch_url
-                liste_urls.appendleft(url)
-                self.AffichTxt.InsertItem(0,title)
-                self.color_ziks()
-                self.check_zik()
-                
+            self.fetch_q()
         else:
             self.txtVideMemo.SetLabel("Enter music name !")
-        evt.Skip()        
+        evt.Skip()  
 
+    @threaded
+    def fetch_q(self):
+        global liste_urls,title
+        liste_urls=deque()
+        liste_all = s.videos
+        for i in liste_all:
+            title = i.title
+            url = i.watch_url
+            liste_urls.appendleft(url)
+            self.AffichTxt.InsertItem(0,title)
+            self.color_txt()
+            self.check_zik()
+            self.check_vid()
+
+    def color_txt(self):
+        self.hide_loader()
+        self.AffichTxt.SetTextColour(wx.BLUE)
+        
     def check_zik(self):
         for j in lst_ziks:
             if (j==title):
-                index=self.AffichTxt.FindItem(-1,j)
-                self.AffichTxt.SetItemTextColour(index,wx.RED)
+                self.AffichTxt.SetItemTextColour(0,wx.RED)
+                             
+    def check_vid(self):
+        for k in lst_vids:
+            if (k==title):
+                self.AffichTxt.SetItemTextColour(0,wx.RED)
         
     def download(self,evt):
         i_text = evt.GetText()
         index=self.AffichTxt.FindItem(-1,i_text)
         test_color = self.AffichTxt.GetItemTextColour(index)
         if test_color==wx.RED:
-            Connexion = wx.MessageDialog(self, "You already own this music !"+"\n"+"You cannot download it twice !","Warning window",\
-            style=wx.ICON_QUESTION|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+            Connexion = wx.MessageDialog(self, "You already own this Music/Video !"+"\n"+"It will overwrite existing file !","Warning window",\
+            style=wx.ICON_QUESTION|wx.CENTRE|wx.YES_NO|wx.CANCEL,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
             rep = Connexion.ShowModal() #Affiche le message a l'ecran.
-        else:
-            url=liste_urls[index]
-            yt = YouTube(url)
-            stream = yt.streams.get_audio_only()
-            stream.download("Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
-            self.AffichTxt.SetItemTextColour(index,wx.RED)
+            if rep == wx.ID_YES:
+                url=liste_urls[index]
+                yt = YouTube(url)
+                if (self.test_mp3==True):
+                    stream = yt.streams.get_audio_only()
+                    stream.download("Audio Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
+                else:
+                    stream = yt.streams.get_highest_resolution()
+                    stream.download("Video Collection")
+                self.AffichTxt.SetItemTextColour(index,wx.RED)
+            else:
+                pass
         evt.Skip()
-        
-    def color_ziks(self):
-        self.AffichTxt.SetTextColour(wx.BLUE)
-        self.hide_loader()
         
     def show_help(self,evt):
         Connexion = wx.MessageDialog(self, "YouTube Downloader Python V1.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title turns RED !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection' folder !"+"\n\n"+"That's all folks !","Help window",\
@@ -241,7 +300,7 @@ class Loader(wx.Frame):
         
 class MyApp(wx.App):
     def OnInit(self):
-        frame = MyFrame(None, -1, "YoutubeZik DDL V1.0")
+        frame = MyFrame(None, -1, "YoutubeZik DDL V2.0")
         frame.Show(True)
         frame.Centre()
         return True
