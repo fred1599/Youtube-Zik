@@ -162,7 +162,6 @@ class MyFrame(wx.Frame):
 
     @threaded
     def show_more(self,evt):
-        self.fetched=0
         if (self.AffichTxt.IsEmpty()==False):
             self.show_loader()
             s.get_next_results()
@@ -186,7 +185,6 @@ class MyFrame(wx.Frame):
             self.AffichTxt.DeleteAllItems()
         zik = self.txtBox.GetValue()
         if (zik!=""):
-            self.show_loader()
             self.txtVideMemo.SetLabel("")
             s = Search(zik)
             self.fetch_q()
@@ -209,52 +207,56 @@ class MyFrame(wx.Frame):
             self.check_vid()
 
     def color_txt(self):
-        self.hide_loader()
         self.AffichTxt.SetTextColour(wx.BLUE)
         
     def check_zik(self):
         for j in lst_ziks:
             if (j==title):
                 self.AffichTxt.SetItemTextColour(0,wx.RED)
+
                              
     def check_vid(self):
         for k in lst_vids:
             if (k==title):
                 self.AffichTxt.SetItemTextColour(0,wx.RED)
-        
+                
     def download(self,evt):
+        global yt,index
         i_text = evt.GetText()
         index=self.AffichTxt.FindItem(-1,i_text)
+        url=liste_urls[index]
+        yt = YouTube(url)
         test_color = self.AffichTxt.GetItemTextColour(index)
         if test_color==wx.RED:
-            Connexion = wx.MessageDialog(self, "You already own this Music/Video !"+"\n"+"It will overwrite existing file !","Warning window",\
+            Connexion = wx.MessageDialog(self, "You already own this Music or Video !"+"\n"+"It will overwrite file if it exists already !","Warning window",\
             style=wx.ICON_QUESTION|wx.CENTRE|wx.YES_NO|wx.CANCEL,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
             rep = Connexion.ShowModal() #Affiche le message a l'ecran.
             if rep == wx.ID_YES:
-                url=liste_urls[index]
-                yt = YouTube(url)
                 if (self.test_mp3==True):
-                    stream = yt.streams.get_audio_only()
-                    stream.download("Audio Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
-                    self.AffichTxt.SetItemTextColour(index,wx.RED)
+                    self.dl_zik()
                 else:
-                    stream = yt.streams.get_highest_resolution()
-                    stream.download("Video Collection")
-                    self.AffichTxt.SetItemTextColour(index,wx.RED)
+                    self.dl_vid()
             else:
                 pass
         else:
-            url=liste_urls[index]
-            yt = YouTube(url)
             if (self.test_mp3==True):
-                stream = yt.streams.get_audio_only()
-                stream.download("Audio Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
-                self.AffichTxt.SetItemTextColour(index,wx.RED)
+                self.dl_zik()
             else:
-                stream = yt.streams.get_highest_resolution()
-                stream.download("Video Collection")
-                self.AffichTxt.SetItemTextColour(index,wx.RED)
+                self.dl_vid()
         evt.Skip()
+
+    @threaded
+    def dl_vid(self):
+        self.loader.Show()
+        stream = yt.streams.get_highest_resolution()
+        stream.download("Video Collection")
+        self.AffichTxt.SetItemTextColour(index,wx.RED)
+        self.loader.Hide()
+
+    def dl_zik(self):
+        stream = yt.streams.get_audio_only()
+        stream.download("Audio Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
+        self.AffichTxt.SetItemTextColour(index,wx.RED)
         
     def show_help(self,evt):
         Connexion = wx.MessageDialog(self, "YouTube Downloader Python V2.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title turns RED !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection''s folder !"+"\n\n"+"That's all folks !","Help window",\
@@ -297,7 +299,7 @@ class Loader(wx.Frame):
         self.panel.Fit()
         self.panel.Show()
 
-        self.txt = wx.StaticText(self.panel,-1,"Searching Music/Album/Artist Please Wait...")
+        self.txt = wx.StaticText(self.panel,-1,"Downloading Please Wait...")
         self.spinner = wx.ActivityIndicator(self.panel, size=(35, 35))
 
         sizer.AddStretchSpacer(1)
