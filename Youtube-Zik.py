@@ -145,6 +145,9 @@ class MyFrame(wx.Frame):
         #Initialize self.test_mp3 var
         self.test_mp3 = self.mp3_b.GetValue()
 
+        self.vmk=0
+        self.zmk=0
+
     #Threads wrapper usage : mark @threaded over differents threads
     def threaded(fn):
         def wrapper(*args, **kwargs):
@@ -163,7 +166,6 @@ class MyFrame(wx.Frame):
     @threaded
     def show_more(self,evt):
         if (self.AffichTxt.IsEmpty()==False):
-            self.show_loader()
             s.get_next_results()
             self.fetch_q()
         else:
@@ -210,15 +212,26 @@ class MyFrame(wx.Frame):
         self.AffichTxt.SetTextColour(wx.BLUE)
         
     def check_zik(self):
-        for j in lst_ziks:
-            if (j==title):
-                self.AffichTxt.SetItemTextColour(0,wx.RED)
-
+        if title in lst_ziks:
+            for j in lst_ziks:
+                if (j==title):
+                    self.AffichTxt.SetItemTextColour(0,"PURPLE")
+                    self.zmk=1
+                if (j==title and self.vmk==1):
+                    self.AffichTxt.SetItemTextColour(0,wx.RED)
+        else:
+            self.zmk=0
                              
     def check_vid(self):
-        for k in lst_vids:
-            if (k==title):
-                self.AffichTxt.SetItemTextColour(0,wx.RED)
+        if title in lst_vids:
+            for k in lst_vids:
+                if (k==title):
+                    self.AffichTxt.SetItemTextColour(0,"FOREST GREEN")
+                    self.vmk=1
+                if (k==title and self.zmk==1):
+                    self.AffichTxt.SetItemTextColour(0,wx.RED)
+        else:
+            self.vmk=0
                 
     def download(self,evt):
         global yt,index
@@ -227,17 +240,26 @@ class MyFrame(wx.Frame):
         url=liste_urls[index]
         yt = YouTube(url)
         test_color = self.AffichTxt.GetItemTextColour(index)
-        if test_color==wx.RED:
-            Connexion = wx.MessageDialog(self, "You already own this Music or Video !"+"\n"+"It will overwrite file if it exists already !","Warning window",\
+        if test_color=="PURPLE":
+            Connexion = wx.MessageDialog(self, "You already own this Music !"+"\n"+"Do you want to download the video file(mp4) ?","Warning window",\
             style=wx.ICON_QUESTION|wx.CENTRE|wx.YES_NO|wx.CANCEL,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
             rep = Connexion.ShowModal() #Affiche le message a l'ecran.
             if rep == wx.ID_YES:
-                if (self.test_mp3==True):
-                    self.dl_zik()
-                else:
                     self.dl_vid()
             else:
                 pass
+        elif test_color=="FOREST GREEN":
+            Connexion = wx.MessageDialog(self, "You already own this Video !"+"\n"+"Do you want to download the audio file(mp3) ?","Warning window",\
+            style=wx.ICON_QUESTION|wx.CENTRE|wx.YES_NO|wx.CANCEL,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+            rep = Connexion.ShowModal() #Affiche le message a l'ecran.
+            if rep == wx.ID_YES:
+                self.dl_zik()
+            else:
+                pass
+        elif test_color==wx.RED:
+            Connexion = wx.MessageDialog(self, "You already own this Audio and Video !"+"\n"+"You can't download it anymore !","Warning window",\
+            style=wx.ICON_QUESTION|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+            rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         else:
             if (self.test_mp3==True):
                 self.dl_zik()
@@ -250,16 +272,27 @@ class MyFrame(wx.Frame):
         self.loader.Show()
         stream = yt.streams.get_highest_resolution()
         stream.download("Video Collection")
-        self.AffichTxt.SetItemTextColour(index,wx.RED)
+        self.vmk=1
+        if(self.zmk==0):
+            self.AffichTxt.SetItemTextColour(index,"FOREST GREEN")
+        else:
+            self.AffichTxt.SetItemTextColour(index,wx.RED)
         self.loader.Hide()
-
+        
+    @threaded
     def dl_zik(self):
+        self.loader.Show()
         stream = yt.streams.get_audio_only()
         stream.download("Audio Collection",mp3=True) # pass the parameter mp3=True to save in .mp3
-        self.AffichTxt.SetItemTextColour(index,wx.RED)
+        self.zmk=1
+        if (self.vmk==0):
+            self.AffichTxt.SetItemTextColour(index,"PURPLE")
+        else:
+            self.AffichTxt.SetItemTextColour(index,wx.RED)
+        self.loader.Hide()
         
     def show_help(self,evt):
-        Connexion = wx.MessageDialog(self, "YouTube Downloader Python V2.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title turns RED !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection''s folder !"+"\n\n"+"That's all folks !","Help window",\
+        Connexion = wx.MessageDialog(self, "YouTube Downloader Python V2.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title color change !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection''s folder !"+"\n\n"+"That's all folks !","Help window",\
         style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
         rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         evt.Skip()
