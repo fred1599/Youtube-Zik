@@ -292,7 +292,7 @@ class MyFrame(wx.Frame):
         self.loader.Hide()
         
     def show_help(self,evt):
-        Connexion = wx.MessageDialog(self, "YouTube Downloader Python V2.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title color change !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection''s folder !"+"\n\n"+"That's all folks !","Help window",\
+        Connexion = wx.MessageDialog(self, "YouTube Downloader Python V2.0 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title color change !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection''s folder !"+"\n\n"+"Press the 'NEED MORE ?' button to fetch more results !"+"\n\n"+"That's all folks !","Help window",\
         style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
         rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         evt.Skip()
