@@ -75,7 +75,7 @@ class MyFrame(wx.Frame):
         #Donate
         self.txt_don = wx.StaticText(self.panel,-1,"Link to Dev's Paypal.me :")
 
-        self.Lien_don = hl.HyperLinkCtrl(self.panel, wx.ID_ANY, 'Thanks if you donate <3',URL="paypal.me/noobpythondev")
+        self.Lien_don = hl.HyperLinkCtrl(self.panel, wx.ID_ANY, 'Thanks if you donate <3',URL="http://paypal.me/noobpythondev")
         self.Lien_don.SetLinkCursor(wx.CURSOR_HAND)
         self.Lien_don.SetUnderlines(False, False, True)
         self.Lien_don.EnableRollover(True)
@@ -144,7 +144,6 @@ class MyFrame(wx.Frame):
 
         #Initialize self.test_mp3 var
         self.test_mp3 = self.mp3_b.GetValue()
-
         self.vmk=0
         self.zmk=0
 
