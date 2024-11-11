@@ -152,7 +152,7 @@ class MyFrame(wx.Frame):
         def wrapper(*args, **kwargs):
             threading.Thread(target=fn, args=args, kwargs=kwargs).start()
         return wrapper
-
+        
     def def_mp3(self,evt):
         self.test_mp3 = self.mp3_b.GetValue()
         evt.Skip()
