@@ -336,7 +336,7 @@ class MyFrame(wx.Frame):
     def replace_char(self,chaine):
         for i in chaine:
             if not i.isalnum() and not i.isspace():
-                chaine=chaine.replace(i,"-")
+                chaine=chaine.replace(i,'')
         return chaine
 
     @threaded
