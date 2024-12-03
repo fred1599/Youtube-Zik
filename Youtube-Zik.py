@@ -10,6 +10,7 @@ import threading
 from pytubefix import YouTube, Search
 from collections import deque
 from moviepy.video.io.ffmpeg_tools import ffmpeg_merge_video_audio
+from pytubefix.cli import on_progress
 
 class MyFrame(wx.Frame):
     def __init__(self, parent, id, title):
@@ -31,7 +32,7 @@ class MyFrame(wx.Frame):
         self.loader.Centre()
 
         #RadioButtons
-        self.mp3_b = wx.RadioButton(self.panel,-1, label="Format: mp3 (audio only)", style=wx.RB_GROUP)
+        self.mp3_b = wx.RadioButton(self.panel,-1, label="Format: m4a (audio only)", style=wx.RB_GROUP)
         self.Bind(wx.EVT_RADIOBUTTON,self.def_mp3,self.mp3_b)
         self.mp4_b = wx.RadioButton(self.panel,-1, label="Format: mp4 (video)")
         self.Bind(wx.EVT_RADIOBUTTON,self.def_mp4,self.mp4_b)
@@ -251,13 +252,14 @@ class MyFrame(wx.Frame):
                 self.AffichTxt.SetItemTextColour(index,"FOREST GREEN")
             if title in lst_ziks and title in lst_vids:
                 self.AffichTxt.SetItemTextColour(index,wx.RED)
-                
+    
     def download(self,evt):
         global yt,index
+        os.system('cls')
         i_text = evt.GetText()
         index=self.AffichTxt.FindItem(-1,i_text)
         url=liste_urls[index]
-        yt = YouTube(url)
+        yt = YouTube(url, on_progress_callback = on_progress)
         test_color = self.AffichTxt.GetItemTextColour(index)
         if test_color=="PURPLE":
             Connexion = wx.MessageDialog(self, "You already own this Music !\nDo you want to download the video file(mp4) ?\nDo you want to overwrite the existing MP3 file ?","Warning window",\
@@ -367,15 +369,18 @@ class MyFrame(wx.Frame):
             stream.download("Video Collection")
         self.check_files()
         self.loader.Hide()
+        #os.system('cls')
         
     @threaded
     def dl_zik(self):
         self.loader.Show()
-        stream = yt.streams.get_audio_only()
+        stream = yt.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first() #Generates m4a files
+        #print(file_size)
         yt.title=self.replace_char(yt.title)
-        stream.download("Audio Collection",filename=yt.title,mp3=True) # pass the parameter mp3=True to save in .mp3
+        stream.download("Audio Collection",filename=yt.title+'.m4a')
         self.check_files()
         self.loader.Hide()
+        #os.system('cls')
         
     def show_help(self,evt):
         Connexion = wx.MessageDialog(self, "YouTube Downloader Python V2.1 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title color change !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection''s folder !"+"\n\n"+"Press the 'NEED MORE ?' button to fetch more results !"+"\n\n"+"That's all folks !","Help window",\
@@ -418,18 +423,21 @@ class Loader(wx.Frame):
         self.panel.Fit()
         self.panel.Show()
 
+        #progress bar or spiner(comment not used one)
+        
         self.txt = wx.StaticText(self.panel,-1,"Downloading or preparing files...\nPlease Wait.\n")
         self.spinner = wx.ActivityIndicator(self.panel, size=(35, 35))
 
         sizer.AddStretchSpacer(1)
         sizer.Add(self.txt, 0, wx.ALIGN_CENTER)
         sizer.Add(self.spinner, 1, wx.ALIGN_CENTER)
-        sizer.AddStretchSpacer(1)
+        sizer.AddStretchSpacer(3)
 
         self.panel.SetSizerAndFit(sizer)
         self.spinner.Start()
-
         #usage : put in wx.Frame class, then call Show/Hide or Destroy
+
+            
         
 class MyApp(wx.App):
     def OnInit(self):
