@@ -6,9 +6,9 @@ Create a virtual env : [Python Venv Setup](https://mothergeo-py.readthedocs.io/e
 
 inside your Venv install requirements :
 
-''' 
-pip install -r /path/to/requirements.txt
-'''
+
+	- pip install -r /path/to/requirements.txt
+
 
 Use your favorite editor to code on Youtube-zik.py !
 	
