@@ -3,15 +3,20 @@ DDL music from Youtube with Python GUI(wxPython)V2.1
 
 # Installation(to work on code)
 Create a virtual env : [Python Venv Setup](https://mothergeo-py.readthedocs.io/en/latest/development/how-to/venv-win.html)
-inside your Venv install requirements : 
+
+inside your Venv install requirements :
+
 ''' 
 pip install -r /path/to/requirements.txt
 '''
+
 Use your favorite editor to code on Youtube-zik.py !
 	
 # Installation(Windows executable)
 Download YoutubeDDL.rar
+
 Use your favorite archiver(winrar,winzip,7z...)
+
 Double click on YoutubeDDL.exe ! (just run it lol)
 
 # Notice
