@@ -53,7 +53,7 @@ Really simple to use :
 That's all folks !
 
 # Screenshot
-![New release](http://ninjaaior.free.fr/YTzik.png "Youtube-Zik DDL V2.1")
+![New release](http://ninjaaior.free.fr/Ytzik.png "Youtube-Zik DDL V2.2")
 
 # Contact
 fawn06220@gmail.com
