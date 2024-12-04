@@ -127,26 +127,15 @@ class MyFrame(wx.Frame):
         gbox2.Add(gtest,(2,0))
         gbox2.Add(self.AffichTxt,(3,0))
         
+        
         #DONATE
-        box0 = wx.StaticBox(self.panel, -1, "Donation :")
-        bsizer0 = wx.StaticBoxSizer(box0, wx.HORIZONTAL)
-        sizerH0 = wx.BoxSizer(wx.VERTICAL)
-        sizerH0.Add(gbox0, 0, wx.ALL|wx.CENTER, 10)
-        bsizer0.Add(sizerH0, 1, wx.EXPAND, 0)
+        bsizer0 = self.create_static_box(self.panel, "Donation :", gbox0)
         
         #Zik-DDL
-        box1 = wx.StaticBox(self.panel, -1, "Youtube-Zik Downloader :")
-        bsizer1 = wx.StaticBoxSizer(box1, wx.HORIZONTAL)
-        sizerH1 = wx.BoxSizer(wx.VERTICAL)
-        sizerH1.Add(gbox1, 0, wx.ALL|wx.CENTER, 10)
-        bsizer1.Add(sizerH1, 1, wx.EXPAND, 0)
+        bsizer1 = self.create_static_box(self.panel, "Youtube-Zik Downloader :", gbox1)
 
-        #Affichage
-        box2 = wx.StaticBox(self.panel, -1, "Results of YT music search :")
-        bsizer2 = wx.StaticBoxSizer(box2, wx.HORIZONTAL)
-        sizerH2 = wx.BoxSizer(wx.VERTICAL)
-        sizerH2.Add(gbox2, 0, wx.ALL|wx.CENTER, 10)
-        bsizer2.Add(sizerH2, 1, wx.EXPAND, 0)
+        # Affichage
+        bsizer2 = self.create_static_box(self.panel, "Results of YT music search :", gbox2)
 
         #--------Ajustement du sizer----------
         mainSizer = wx.BoxSizer(wx.VERTICAL)
@@ -167,6 +156,15 @@ class MyFrame(wx.Frame):
         self.test_mp3 = self.mp3_b.GetValue()
         self.choix=1
         self.vid_only = False
+
+    def create_static_box(self, panel, title, gbox):
+        """Crée une boîte statique avec un titre et un élément interne (gbox)."""
+        box = wx.StaticBox(panel, -1, title)
+        bsizer = wx.StaticBoxSizer(box, wx.HORIZONTAL)
+        sizer = wx.BoxSizer(wx.VERTICAL)
+        sizer.Add(gbox, 0, wx.ALL | wx.CENTER, 10)
+        bsizer.Add(sizer, 1, wx.EXPAND, 0)
+        return bsizer
 
     #Threads wrapper usage : mark @threaded over differents threads
     def threaded(fn):
@@ -195,7 +193,7 @@ class MyFrame(wx.Frame):
     @threaded
     def show_more(self,evt):
         if (self.AffichTxt.IsEmpty()==False):
-            s.get_next_results()
+            self.s.get_next_results()
             self.fetch_q()
         else:
             self.txtVideMemo.SetLabel("Search for music first !")
@@ -207,14 +205,12 @@ class MyFrame(wx.Frame):
 
     @threaded
     def get_music(self,evt):
-        global s#,lst_ziks,lst_vids
-        
         if (self.AffichTxt.IsEmpty()==False):
             self.AffichTxt.DeleteAllItems()
         zik = self.txtBox.GetValue()
         if (zik!=""):
             self.txtVideMemo.SetLabel("")
-            s = Search(zik)
+            self.s = Search(zik)
             self.fetch_q()
         else:
             self.txtVideMemo.SetLabel("Search something first !")
@@ -222,17 +218,16 @@ class MyFrame(wx.Frame):
 
     @threaded
     def fetch_q(self):
-        global liste_urls,title,liste_titres
-        liste_urls=deque()
-        liste_titres=deque()
-        liste_all = s.videos
+        self.liste_urls=deque()
+        self.liste_titres=deque()
+        liste_all = self.s.videos
         for i in liste_all:
-            title = i.title
-            title = self.replace_char(title)
-            liste_titres.appendleft(title)
+            self.title = i.title
+            self.title = self.replace_char(self.title)
+            self.liste_titres.appendleft(self.title)
             url = i.watch_url
-            liste_urls.appendleft(url)
-            self.AffichTxt.InsertItem(0,title)
+            self.liste_urls.appendleft(url)
+            self.AffichTxt.InsertItem(0,self.title)
             self.color_txt()
         self.check_files()
 
@@ -244,23 +239,22 @@ class MyFrame(wx.Frame):
         liste_vids=[f for f in listdir("Video Collection") if isfile(join("Video Collection", f))]
         lst_ziks = [os.path.splitext(x)[0] for x in liste_ziks]
         lst_vids = [os.path.splitext(x)[0] for x in liste_vids]
-        for title in liste_titres:
-            index=self.AffichTxt.FindItem(-1,title)
-            if title in lst_ziks:
-                self.AffichTxt.SetItemTextColour(index,"PURPLE")
-            if title in lst_vids:
-                self.AffichTxt.SetItemTextColour(index,"FOREST GREEN")
-            if title in lst_ziks and title in lst_vids:
-                self.AffichTxt.SetItemTextColour(index,wx.RED)
+        for self.title in self.liste_titres:
+            self.index=self.AffichTxt.FindItem(-1,self.title)
+            if self.title in lst_ziks:
+                self.AffichTxt.SetItemTextColour(self.index,"PURPLE")
+            if self.title in lst_vids:
+                self.AffichTxt.SetItemTextColour(self.index,"FOREST GREEN")
+            if self.title in lst_ziks and self.title in lst_vids:
+                self.AffichTxt.SetItemTextColour(self.index,wx.RED)
     
     def download(self,evt):
-        global yt,index
         os.system('cls')
         i_text = evt.GetText()
-        index=self.AffichTxt.FindItem(-1,i_text)
-        url=liste_urls[index]
-        yt = YouTube(url, on_progress_callback = on_progress)
-        test_color = self.AffichTxt.GetItemTextColour(index)
+        self.index=self.AffichTxt.FindItem(-1,i_text)
+        url=self.liste_urls[self.index]
+        self.yt = YouTube(url, on_progress_callback = on_progress)
+        test_color = self.AffichTxt.GetItemTextColour(self.index)
         if test_color=="PURPLE":
             Connexion = wx.MessageDialog(self, "You already own this Music !\nDo you want to download the video file(mp4) ?\nDo you want to overwrite the existing MP3 file ?","Warning window",\
             style=wx.ICON_QUESTION|wx.CENTRE|wx.YES_NO|wx.CANCEL,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
@@ -344,11 +338,11 @@ class MyFrame(wx.Frame):
     @threaded
     def dl_vid(self):
         self.loader.Show()
-        yt.title=self.replace_char(yt.title)
+        self.yt.title=self.replace_char(self.yt.title)
         if self.choix==1:
             if self.vid_only==True:
                 try:
-                    video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
+                    video_stream = self.yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
                     video_stream.download("Video Collection")
                 except:
                     Connexion = wx.MessageDialog(self, "This video can't be downloaded, try another one please !","Video unavaible",\
@@ -357,13 +351,13 @@ class MyFrame(wx.Frame):
             else:
             #DL video and audio separately for best quality
                 try:
-                    video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
-                    audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).order_by('abr').desc().first()
+                    video_stream = self.yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
+                    audio_stream = self.yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).order_by('abr').desc().first()
                     video_stream.download()
                     audio_stream.download()
                     audio_file = self.find_most_recent_file(os.getcwd(), '.m4a')
                     video_file = self.find_most_recent_file(os.getcwd(), '.mp4')
-                    output_path = os.getcwd()+'\\Video Collection\\'+yt.title+'.mp4'
+                    output_path = os.getcwd()+'\\Video Collection\\'+self.yt.title+'.mp4'
                     ffmpeg_merge_video_audio(video_file,
                              audio_file,
                              output_path,
@@ -376,7 +370,7 @@ class MyFrame(wx.Frame):
                     rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         if self.choix==0:
             try:
-                stream = yt.streams.get_highest_resolution()
+                stream = self.yt.streams.get_highest_resolution()
                 stream.download("Video Collection")
             except:
                 Connexion = wx.MessageDialog(self, "This video can't be downloaded, try another one please !","Video unavaible",\
@@ -389,9 +383,9 @@ class MyFrame(wx.Frame):
     def dl_zik(self):
         self.loader.Show()
         try:
-            stream = yt.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first() #Generates m4a files
-            yt.title=self.replace_char(yt.title)
-            stream.download("Audio Collection",filename=yt.title+'.m4a') 
+            stream = self.yt.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first() #Generates m4a files
+            self.yt.title=self.replace_char(self.yt.title)
+            stream.download("Audio Collection",filename=self.yt.title+'.m4a') 
         except:
             Connexion = wx.MessageDialog(self, "This music can't be downloaded, try another one please !","Music unavaible",\
             style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
