@@ -5,6 +5,14 @@ A project based on [pytubefix](https://github.com/JuanBindez/pytubefix) !
 
 Thanks for their work !
 
+# Quickstart
+
+Install from Pypi with PIP :
+	pip install youtube-zik
+	
+Once installed just use with this command:
+	py -m youtube-zik
+
 # Installation(to work on code)
 Create a virtual env : [Python Venv Setup](https://mothergeo-py.readthedocs.io/en/latest/development/how-to/venv-win.html)
 
