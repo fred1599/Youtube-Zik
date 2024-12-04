@@ -357,8 +357,8 @@ class MyFrame(wx.Frame):
             else:
             #DL video and audio separately for best quality
                 try:
-                    video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').last()
-                    audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).order_by('abr').last()
+                    video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
+                    audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).order_by('abr').desc().first()
                     video_stream.download()
                     audio_stream.download()
                     audio_file = self.find_most_recent_file(os.getcwd(), '.m4a')
