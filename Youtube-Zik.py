@@ -28,7 +28,7 @@ class MyFrame(wx.Frame):
         self.CreerBarreEtat()
 
         #Loader
-        self.loader = Loader(self,-1,"Loading...")
+        self.loader = Loader(self,-1,"Download live status !")
         self.loader.Centre()
 
         #RadioButtons
@@ -117,7 +117,6 @@ class MyFrame(wx.Frame):
         gtest.SetEmptyCellSize((10,10))
         gtest.Add(self.choix_qualite,(0,0))
         gtest.Add(self.sound_off,(0,1))
-        #gtest.Add(self.AffichTxt,(1,0))
         
         #Sizer affichage
         gbox2 = wx.GridBagSizer(10,10)
@@ -156,6 +155,7 @@ class MyFrame(wx.Frame):
         self.test_mp3 = self.mp3_b.GetValue()
         self.choix=1
         self.vid_only = False
+        sys.stdout=self.loader.AffichTxt
 
     def create_static_box(self, panel, title, gbox):
         """Crée une boîte statique avec un titre et un élément interne (gbox)."""
@@ -249,7 +249,7 @@ class MyFrame(wx.Frame):
                 self.AffichTxt.SetItemTextColour(self.index,wx.RED)
     
     def download(self,evt):
-        os.system('cls')
+        self.loader.AffichTxt.Clear()
         i_text = evt.GetText()
         self.index=self.AffichTxt.FindItem(-1,i_text)
         url=self.liste_urls[self.index]
@@ -377,6 +377,7 @@ class MyFrame(wx.Frame):
                 style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
                 rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         self.check_files()
+        time.sleep(5)
         self.loader.Hide()
         
     @threaded
@@ -385,12 +386,13 @@ class MyFrame(wx.Frame):
         try:
             stream = self.yt.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first() #Generates m4a files
             self.yt.title=self.replace_char(self.yt.title)
-            stream.download("Audio Collection",filename=self.yt.title+'.m4a') 
+            stream.download("Audio Collection",filename=self.yt.title+'.m4a')
         except:
             Connexion = wx.MessageDialog(self, "This music can't be downloaded, try another one please !","Music unavaible",\
             style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
-            rep = Connexion.ShowModal() #Affiche le message a l'ecran.
+            rep = Connexion.ShowModal() #Affiche le message a l'ecran
         self.check_files()
+        time.sleep(5)
         self.loader.Hide()
         
     def show_help(self,evt):
@@ -398,14 +400,6 @@ class MyFrame(wx.Frame):
         style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
         rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         evt.Skip()
-        
-    @threaded
-    def show_loader(self):
-        self.loader.Show()
-
-    @threaded
-    def hide_loader(self):
-        self.loader.Hide()
     
     def Chrono(self):#Chronometre (date )
         stemps = time.strftime("%A %d/%m/%Y") #Definit le format voulu
@@ -427,32 +421,34 @@ class MyFrame(wx.Frame):
 
 class Loader(wx.Frame):
     def __init__(self, parent, id, title):
-        wx.Frame.__init__(self, None, id, title, wx.DefaultPosition, wx.Size(300, 200),style=wx.MINIMIZE_BOX|wx.SYSTEM_MENU | wx.CAPTION |wx.STAY_ON_TOP)
+        wx.Frame.__init__(self, None, id, title, wx.DefaultPosition, wx.Size(700, 400),style=wx.MINIMIZE_BOX|wx.SYSTEM_MENU | wx.CAPTION|wx.STAY_ON_TOP)
 
         sizer = wx.BoxSizer(wx.VERTICAL)
         self.panel = wx.Panel(self,-1)
         self.panel.Fit()
         self.panel.Show()
-
-        #progress bar or spiner(comment not used one)
         
-        self.txt = wx.StaticText(self.panel,-1,"Downloading or preparing files...\nPlease Wait.\n")
-        self.spinner = wx.ActivityIndicator(self.panel, size=(35, 35))
+        self.txt = wx.StaticText(self.panel,-1,"Downloading or preparing files...Please Wait...")
+        #create wx.Font object
+        font = wx.Font(14, family = wx.FONTFAMILY_MODERN, style = 0, weight = 90, 
+                      underline = False, faceName ="", encoding = wx.FONTENCODING_DEFAULT)
+        self.txt.SetFont(font)
+        
+        self.AffichTxt=wx.TextCtrl(self.panel,-1,size=(620,300),style=wx.TE_MULTILINE|wx.TE_READONLY|wx.TE_AUTO_URL|wx.TE_RICH)
+        self.AffichTxt.SetBackgroundColour('BLACK')
+        self.AffichTxt.SetFont(wx.Font(10, wx.DEFAULT , wx.NORMAL, wx.NORMAL,False ))
+        self.AffichTxt.SetForegroundColour("FOREST GREEN")
 
         sizer.AddStretchSpacer(1)
         sizer.Add(self.txt, 0, wx.ALIGN_CENTER)
-        sizer.Add(self.spinner, 1, wx.ALIGN_CENTER)
-        sizer.AddStretchSpacer(3)
+        sizer.Add(self.AffichTxt, 1, wx.ALIGN_CENTER)
+        sizer.AddStretchSpacer(1)
 
         self.panel.SetSizerAndFit(sizer)
-        self.spinner.Start()
-        #usage : put in wx.Frame class, then call Show/Hide or Destroy
-
-            
         
 class MyApp(wx.App):
     def OnInit(self):
-        frame = MyFrame(None, -1, "YoutubeZik DDL V2.1")
+        frame = MyFrame(None, -1, "YoutubeZik DDL V2.2")
         frame.Show(True)
         frame.Centre()
         return True
@@ -463,4 +459,4 @@ if __name__=='__main__':
     app.MainLoop()
 
 
-### YoutubeZik DDL V2.1 by François GARBEZ 29/11/2024 Tested on python 3.12 Win11 ###
+### YoutubeZik DDL V2.2 by François GARBEZ 04/12/2024 Tested on python 3.12 Win11 ###
