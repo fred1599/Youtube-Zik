@@ -347,40 +347,57 @@ class MyFrame(wx.Frame):
         yt.title=self.replace_char(yt.title)
         if self.choix==1:
             if self.vid_only==True:
-                video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
-                video_stream.download("Video Collection")
+                try:
+                    video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
+                    video_stream.download("Video Collection")
+                except:
+                    Connexion = wx.MessageDialog(self, "This video can't be downloaded, try another one please !","Video unavaible",\
+                    style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+                    rep = Connexion.ShowModal() #Affiche le message a l'ecran.
             else:
             #DL video and audio separately for best quality
-                video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
-                video_stream.download()
-                audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).order_by('abr').desc().first()
-                audio_stream.download()
-                audio_file = self.find_most_recent_file(os.getcwd(), '.m4a')
-                video_file = self.find_most_recent_file(os.getcwd(), '.mp4')
-                output_path = os.getcwd()+'\\Video Collection\\'+yt.title+'.mp4'
-                ffmpeg_merge_video_audio(video_file,
+                try:
+                    video_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_video=True).order_by('resolution').desc().first()
+                    audio_stream = yt.streams.filter(adaptive=True, file_extension='mp4', only_audio=True).order_by('abr').desc().first()
+                    video_stream.download()
+                    audio_stream.download()
+                    audio_file = self.find_most_recent_file(os.getcwd(), '.m4a')
+                    video_file = self.find_most_recent_file(os.getcwd(), '.mp4')
+                    output_path = os.getcwd()+'\\Video Collection\\'+yt.title+'.mp4'
+                    ffmpeg_merge_video_audio(video_file,
                              audio_file,
                              output_path,
                              logger=None)
-                os.remove(audio_file)
-                os.remove(video_file)
+                    os.remove(audio_file)
+                    os.remove(video_file)
+                except:
+                    Connexion = wx.MessageDialog(self, "This video can't be downloaded, try another one please !","Video unavaible",\
+                    style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+                    rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         if self.choix==0:
-            stream = yt.streams.get_highest_resolution()
-            stream.download("Video Collection")
+            try:
+                stream = yt.streams.get_highest_resolution()
+                stream.download("Video Collection")
+            except:
+                Connexion = wx.MessageDialog(self, "This video can't be downloaded, try another one please !","Video unavaible",\
+                style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+                rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         self.check_files()
         self.loader.Hide()
-        #os.system('cls')
         
     @threaded
     def dl_zik(self):
         self.loader.Show()
-        stream = yt.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first() #Generates m4a files
-        #print(file_size)
-        yt.title=self.replace_char(yt.title)
-        stream.download("Audio Collection",filename=yt.title+'.m4a')
+        try:
+            stream = yt.streams.filter(adaptive=True, only_audio=True).order_by('abr').desc().first() #Generates m4a files
+            yt.title=self.replace_char(yt.title)
+            stream.download("Audio Collection",filename=yt.title+'.m4a') 
+        except:
+            Connexion = wx.MessageDialog(self, "This music can't be downloaded, try another one please !","Music unavaible",\
+            style=wx.ICON_WARNING|wx.CENTRE|wx.OK,pos=wx.DefaultPosition) #Definit les attributs de la fenetre de message.
+            rep = Connexion.ShowModal() #Affiche le message a l'ecran.
         self.check_files()
         self.loader.Hide()
-        #os.system('cls')
         
     def show_help(self,evt):
         Connexion = wx.MessageDialog(self, "YouTube Downloader Python V2.1 Notice :"+"\n\n"+"Right click on a BLUE coloured music to download it."+"\n"+"To know when download finished just wait until music title color change !"+"\n"+"If the music is coloured in RED you already have it in the 'Collection''s folder !"+"\n\n"+"Press the 'NEED MORE ?' button to fetch more results !"+"\n\n"+"That's all folks !","Help window",\

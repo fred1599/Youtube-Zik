@@ -29,12 +29,15 @@ Really simple to use :
 	- You can't download twice the same music
 	- "More Results" button to fecth more (actually 17 results)
 	- Mp3/mp4 download format choice
+	- You can enter a youtube URL directly to find your media !
 	
 # V2.1 Release
 	- Video Quality can now be choosen
 	- High quality video can be downloaded with or without sound
 	- Possibility of overwriting files
 	- Files system reviewed Red/Purple/Green (still not perfect... Anyone welcome to help on this !)
+	- Progress bar of donwload in CMD Window
+	- Exceptions handled (i hope lol)
 	
 That's all folks !
 
