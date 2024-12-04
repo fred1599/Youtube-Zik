@@ -1,6 +1,10 @@
 # Youtube-Zik
 DDL music from Youtube with Python GUI(wxPython)V2.1
 
+A project based on [pytubefix](https://github.com/JuanBindez/pytubefix) !
+
+Thanks for their work !
+
 # Installation(to work on code)
 Create a virtual env : [Python Venv Setup](https://mothergeo-py.readthedocs.io/en/latest/development/how-to/venv-win.html)
 
