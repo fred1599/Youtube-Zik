@@ -1,5 +1,5 @@
 # Youtube-Zik
-DDL music from Youtube with Python GUI(wxPython)V2.1
+DDL music from Youtube with Python GUI(wxPython)V2.2
 
 A project based on [pytubefix](https://github.com/JuanBindez/pytubefix) !
 
@@ -7,7 +7,7 @@ Thanks for their work !
 
 # Quickstart
 
-Install from Pypi with PIP :
+Install from [youtube-zik Pypi](https://pypi.org/project/youtube-zik) with PIP :
 
 
 	pip install youtube-zik
