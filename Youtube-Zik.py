@@ -1,7 +1,6 @@
 # coding: utf8
 import wx
 import time
-from time import gmtime, strftime
 import os, sys
 from os import listdir
 from os.path import *
